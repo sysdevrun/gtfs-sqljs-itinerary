@@ -1,5 +1,5 @@
 import { Graph } from 'graphlib';
-import type { GtfsSqlJs } from 'gtfs-sqljs';
+import type { GtfsSqlJs, Stop, Trip, StopTime } from 'gtfs-sqljs';
 
 /**
  * Represents an edge in the transit graph
@@ -160,7 +160,7 @@ export class GraphBuilder {
     }
 
     // Build ordered list of stops
-    const tripIds = trips.map(t => t.trip_id);
+    const tripIds = trips.map((t: Trip) => t.trip_id);
     const orderedStops = this.gtfs.buildOrderedStopList(tripIds);
 
     // Add edges between consecutive stops
@@ -438,8 +438,8 @@ export class GraphBuilder {
     }
 
     // Find all stops that have this stop as parent_station
-    const childStops = allStops.filter(stop => stop.parent_station === stopId);
-    stopIds.push(...childStops.map(stop => stop.stop_id));
+    const childStops = allStops.filter((stop: Stop) => stop.parent_station === stopId);
+    stopIds.push(...childStops.map((stop: Stop) => stop.stop_id));
 
     return stopIds;
   }
@@ -490,7 +490,7 @@ export class GraphBuilder {
       const endStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.endStop);
 
       // Get stop times filtered by trip IDs (only for our route/direction/date trips)
-      const tripIds = trips.map(t => t.trip_id);
+      const tripIds = trips.map((t: Trip) => t.trip_id);
       const stopTimesForTrips = gtfs.getStopTimes({ tripId: tripIds });
 
       if (!stopTimesForTrips || stopTimesForTrips.length === 0) {
@@ -498,7 +498,7 @@ export class GraphBuilder {
       }
 
       // Find stop times at departure stop for our valid trips
-      const departureStopTimes = stopTimesForTrips.filter(st =>
+      const departureStopTimes = stopTimesForTrips.filter((st: StopTime) =>
         startStopIds.includes(st.stop_id)
       );
 
@@ -507,7 +507,7 @@ export class GraphBuilder {
       }
 
       // Sort by departure time to find earliest matching trip
-      departureStopTimes.sort((a, b) => {
+      departureStopTimes.sort((a: StopTime, b: StopTime) => {
         const timeA = GraphBuilder.timeToSeconds(a.departure_time);
         const timeB = GraphBuilder.timeToSeconds(b.departure_time);
         return timeA - timeB;
@@ -529,7 +529,7 @@ export class GraphBuilder {
         }
 
         // Now find arrival stop time for the same trip
-        const arrivalStopTime = stopTimesForTrips.find(st =>
+        const arrivalStopTime = stopTimesForTrips.find((st: StopTime) =>
           st.trip_id === depStopTime.trip_id &&
           endStopIds.includes(st.stop_id) &&
           st.stop_sequence > depStopTime.stop_sequence
@@ -543,7 +543,7 @@ export class GraphBuilder {
         // Found a matching trip!
         const arrTime = GraphBuilder.timeToSeconds(arrivalStopTime.arrival_time);
 
-        matchedTrip = trips.find(t => t.trip_id === depStopTime.trip_id);
+        matchedTrip = trips.find((t: Trip) => t.trip_id === depStopTime.trip_id);
         matchedDepartureTime = depTime;
         matchedArrivalTime = arrTime;
         break; // Take the earliest available trip
