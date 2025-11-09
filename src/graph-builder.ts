@@ -479,19 +479,17 @@ export class GraphBuilder {
       const startStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.startStop);
       const endStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.endStop);
 
-      // Optimization: Get stop times for departure stop first
-      // This filters down to only trips that actually serve this stop
-      const allStopTimes = gtfs.getStopTimes();
-      if (!allStopTimes) {
+      // Get stop times filtered by trip IDs (only for our route/direction/date trips)
+      const tripIds = trips.map(t => t.trip_id);
+      const stopTimesForTrips = gtfs.getStopTimes({ tripId: tripIds });
+
+      if (!stopTimesForTrips || stopTimesForTrips.length === 0) {
         return null;
       }
 
-      // Get trip IDs that we're interested in (from the route/direction/date filter)
-      const validTripIds = new Set(trips.map(t => t.trip_id));
-
       // Find stop times at departure stop for our valid trips
-      const departureStopTimes = allStopTimes.filter(st =>
-        startStopIds.includes(st.stop_id) && validTripIds.has(st.trip_id)
+      const departureStopTimes = stopTimesForTrips.filter(st =>
+        startStopIds.includes(st.stop_id)
       );
 
       if (departureStopTimes.length === 0) {
@@ -511,7 +509,6 @@ export class GraphBuilder {
       let matchedTrip = null;
       let matchedDepartureTime = 0;
       let matchedArrivalTime = 0;
-      let matchedDepartureStopTime = null;
 
       for (const depStopTime of departureStopTimes) {
         const depTime = GraphBuilder.timeToSeconds(depStopTime.departure_time);
@@ -522,7 +519,7 @@ export class GraphBuilder {
         }
 
         // Now find arrival stop time for the same trip
-        const arrivalStopTime = allStopTimes.find(st =>
+        const arrivalStopTime = stopTimesForTrips.find(st =>
           st.trip_id === depStopTime.trip_id &&
           endStopIds.includes(st.stop_id) &&
           st.stop_sequence > depStopTime.stop_sequence
@@ -539,7 +536,6 @@ export class GraphBuilder {
         matchedTrip = trips.find(t => t.trip_id === depStopTime.trip_id);
         matchedDepartureTime = depTime;
         matchedArrivalTime = arrTime;
-        matchedDepartureStopTime = depStopTime;
         break; // Take the earliest available trip
       }
 
