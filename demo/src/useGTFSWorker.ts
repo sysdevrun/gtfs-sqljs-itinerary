@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Comlink from 'comlink';
 import type { Stop, Route, ItineraryRequest } from './gtfs.worker';
 import type { ScheduledJourney } from '../../src/graph-builder';
@@ -10,7 +10,11 @@ type GTFSWorkerType = {
   findItineraries: (request: ItineraryRequest) => Promise<ScheduledJourney[]>;
 };
 
-export function useGTFSWorker() {
+interface UseGTFSWorkerOptions {
+  gtfsUrl: string;
+}
+
+export function useGTFSWorker({ gtfsUrl }: UseGTFSWorkerOptions) {
   const workerRef = useRef<Worker | null>(null);
   const workerApiRef = useRef<GTFSWorkerType | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -18,51 +22,66 @@ export function useGTFSWorker() {
   const [initProgress, setInitProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Create worker
-    workerRef.current = new Worker(
-      new URL('./gtfs.worker.ts', import.meta.url),
-      { type: 'module' }
-    );
-
-    // Wrap with Comlink
-    workerApiRef.current = Comlink.wrap<GTFSWorkerType>(workerRef.current);
-
-    // Initialize GTFS data
-    const initialize = async () => {
-      setIsInitializing(true);
-      setError(null);
-
-      try {
-        const gtfsUrl = `${import.meta.env.BASE_URL}car-jaune.gtfs.zip`;
-        await workerApiRef.current!.initialize(
-          gtfsUrl,
-          Comlink.proxy((progress: number) => {
-            setInitProgress(progress);
-          })
-        );
-        setIsReady(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to initialize GTFS');
-        console.error('Failed to initialize GTFS:', err);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initialize();
-
-    // Cleanup
-    return () => {
-      workerRef.current?.terminate();
-    };
+  // Cleanup worker
+  const cleanup = useCallback(() => {
+    if (workerRef.current) {
+      workerRef.current.terminate();
+      workerRef.current = null;
+      workerApiRef.current = null;
+    }
   }, []);
+
+  // Initialize worker with given GTFS URL
+  const initializeWorker = useCallback(async (url: string) => {
+    setIsInitializing(true);
+    setIsReady(false);
+    setError(null);
+    setInitProgress(0);
+
+    // Cleanup existing worker
+    cleanup();
+
+    try {
+      // Create new worker
+      workerRef.current = new Worker(
+        new URL('./gtfs.worker.ts', import.meta.url),
+        { type: 'module' }
+      );
+
+      // Wrap with Comlink
+      workerApiRef.current = Comlink.wrap<GTFSWorkerType>(workerRef.current);
+
+      // Initialize GTFS data
+      await workerApiRef.current.initialize(
+        url,
+        Comlink.proxy((progress: number) => {
+          setInitProgress(progress);
+        })
+      );
+
+      setIsReady(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to initialize GTFS');
+      console.error('Failed to initialize GTFS:', err);
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [cleanup]);
+
+  // Reinitialize when GTFS URL changes
+  useEffect(() => {
+    initializeWorker(gtfsUrl);
+
+    // Cleanup on unmount
+    return cleanup;
+  }, [gtfsUrl, initializeWorker, cleanup]);
 
   return {
     worker: workerApiRef.current,
     isInitializing,
     isReady,
     initProgress,
-    error
+    error,
+    reinitialize: initializeWorker
   };
 }

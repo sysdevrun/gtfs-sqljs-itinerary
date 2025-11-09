@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SearchableSelect } from './SearchableSelect';
 import type { Stop } from '../gtfs.worker';
 
 interface ItineraryFormProps {
@@ -67,38 +68,26 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
           <label className="block text-sm font-medium text-gray-700 mb-2">
             From
           </label>
-          <select
+          <SearchableSelect
+            stops={parentStops}
             value={fromStopId}
-            onChange={(e) => setFromStopId(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={setFromStopId}
+            placeholder="Select departure stop..."
             disabled={isSearching}
-          >
-            <option value="">Select departure stop...</option>
-            {parentStops.map((stop) => (
-              <option key={stop.stop_id} value={stop.stop_id}>
-                {stop.stop_name}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             To
           </label>
-          <select
+          <SearchableSelect
+            stops={parentStops}
             value={toStopId}
-            onChange={(e) => setToStopId(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={setToStopId}
+            placeholder="Select arrival stop..."
             disabled={isSearching}
-          >
-            <option value="">Select arrival stop...</option>
-            {parentStops.map((stop) => (
-              <option key={stop.stop_id} value={stop.stop_id}>
-                {stop.stop_name}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div>

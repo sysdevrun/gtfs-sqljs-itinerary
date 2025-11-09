@@ -1,9 +1,10 @@
 import type { ScheduledJourney } from '../../../src/graph-builder';
-import type { Route } from '../gtfs.worker';
+import type { Route, Stop } from '../gtfs.worker';
 
 interface ItineraryResultsProps {
   journeys: ScheduledJourney[];
   routes: Route[];
+  stops: Stop[];
 }
 
 function formatTime(seconds: number): string {
@@ -34,7 +35,12 @@ function getRouteInfo(routeShortName: string, routes: Route[]) {
   };
 }
 
-export function ItineraryResults({ journeys, routes }: ItineraryResultsProps) {
+function getStopName(stopId: string, stops: Stop[]): string {
+  const stop = stops.find(s => s.stop_id === stopId);
+  return stop?.stop_name || stopId;
+}
+
+export function ItineraryResults({ journeys, routes, stops }: ItineraryResultsProps) {
   if (journeys.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -128,7 +134,7 @@ export function ItineraryResults({ journeys, routes }: ItineraryResultsProps) {
                           {formatTime(leg.departureTime)}
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-900">{leg.startStop}</div>
+                          <div className="font-medium text-gray-900">{getStopName(leg.startStop, stops)}</div>
                         </div>
                       </div>
 
@@ -146,7 +152,7 @@ export function ItineraryResults({ journeys, routes }: ItineraryResultsProps) {
                           {formatTime(leg.arrivalTime)}
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-900">{leg.endStop}</div>
+                          <div className="font-medium text-gray-900">{getStopName(leg.endStop, stops)}</div>
                         </div>
                       </div>
                     </div>
