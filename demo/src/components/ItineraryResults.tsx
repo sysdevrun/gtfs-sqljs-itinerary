@@ -51,8 +51,23 @@ export function ItineraryResults({ journeys, routes, stops }: ItineraryResultsPr
     );
   }
 
-  // Sort journeys by arrival time (earliest first)
-  const sortedJourneys = [...journeys].sort((a, b) => a.arrivalTime - b.arrivalTime);
+  // Sort journeys by: 1) arrival time, 2) duration, 3) number of transfers
+  const sortedJourneys = [...journeys].sort((a, b) => {
+    // First, sort by arrival time (earliest first)
+    if (a.arrivalTime !== b.arrivalTime) {
+      return a.arrivalTime - b.arrivalTime;
+    }
+
+    // Then by duration (shortest first)
+    if (a.totalDuration !== b.totalDuration) {
+      return a.totalDuration - b.totalDuration;
+    }
+
+    // Finally by number of transfers (fewest first)
+    const aTransfers = a.legs.length - 1;
+    const bTransfers = b.legs.length - 1;
+    return aTransfers - bTransfers;
+  });
 
   // Find minimum duration and minimum transfers
   const minDuration = Math.min(...sortedJourneys.map(j => j.totalDuration));
