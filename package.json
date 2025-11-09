@@ -1,0 +1,28 @@
+{
+  "name": "gtfs-sqljs-itinerary",
+  "version": "1.0.0",
+  "description": "GTFS itinerary search using gtfs-sqljs and graphlib",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node dist/test.js"
+  },
+  "keywords": [
+    "gtfs",
+    "itinerary",
+    "graph",
+    "transit"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "graphlib": "^2.1.8",
+    "gtfs-sqljs": "github:sysdevrun/gtfs-sqljs"
+  },
+  "devDependencies": {
+    "@types/graphlib": "^2.1.12",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
