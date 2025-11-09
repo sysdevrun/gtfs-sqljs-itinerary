@@ -1,6 +1,16 @@
 import { GtfsSqlJs } from 'gtfs-sqljs';
-import { GraphBuilder, PathSegment, SimplifiedTrip } from './graph-builder';
+import { GraphBuilder, PathSegment, SimplifiedTrip, ScheduledJourney } from './graph-builder';
 import * as path from 'path';
+
+/**
+ * Helper function to convert seconds to HH:MM:SS format
+ */
+function secondsToTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
 /**
  * Helper function to display simplified trips
@@ -40,7 +50,54 @@ function displaySimplifiedPath(
   console.log('');
 }
 
+/**
+ * Helper function to display scheduled journey
+ */
+function displayScheduledJourney(
+  gtfs: GtfsSqlJs,
+  journey: ScheduledJourney,
+  pathNumber: number
+): void {
+  console.log(`\n  Scheduled Journey for Path ${pathNumber}:`);
+  console.log(`    Departure: ${secondsToTime(journey.departureTime)}`);
+  console.log(`    Arrival: ${secondsToTime(journey.arrivalTime)}`);
+  console.log(`    Duration: ${Math.floor(journey.totalDuration / 60)} minutes`);
+  console.log(`    Legs: ${journey.legs.length}`);
+
+  journey.legs.forEach((leg, legIndex) => {
+    // Get stop names
+    const fromStops = gtfs.getStops({ stopId: leg.startStop });
+    const toStops = gtfs.getStops({ stopId: leg.endStop });
+
+    const fromName = fromStops?.[0]?.stop_name || leg.startStop;
+    const toName = toStops?.[0]?.stop_name || leg.endStop;
+
+    console.log(`\n    Leg ${legIndex + 1}:`);
+    console.log(`      Route: ${leg.routeShortName} (Trip: ${leg.tripShortName})`);
+    console.log(`      From: ${fromName} at ${secondsToTime(leg.departureTime)}`);
+    console.log(`      To: ${toName} at ${secondsToTime(leg.arrivalTime)}`);
+    console.log(`      Duration: ${Math.floor((leg.arrivalTime - leg.departureTime) / 60)} minutes`);
+  });
+
+  console.log('');
+}
+
 async function main() {
+  // Test parameters
+  const testDate = '20251110'; // 2025-11-10
+  const testTime = '13:55:00';
+  const testTimeSeconds = 13 * 3600 + 55 * 60; // 50100 seconds
+  const minTransferDuration = 5 * 60; // 5 minutes = 300 seconds
+
+  console.log('='.repeat(70));
+  console.log('GTFS Itinerary Search Test');
+  console.log('='.repeat(70));
+  console.log(`\nTest Parameters:`);
+  console.log(`  Date: ${testDate} (${testDate.substring(0, 4)}-${testDate.substring(4, 6)}-${testDate.substring(6, 8)})`);
+  console.log(`  Departure Time: ${testTime}`);
+  console.log(`  Minimum Transfer Duration: ${minTransferDuration / 60} minutes`);
+  console.log('');
+
   console.log('Loading GTFS data from car-jaune.gtfs.zip...');
 
   // Load GTFS data
@@ -76,11 +133,12 @@ async function main() {
 
   // Create graph builder with a single unified graph
   console.log('\n\nBuilding unified graph with routes O1 and S4...');
+  console.log(`Using date: ${testDate}`);
   const graphBuilder = new GraphBuilder(gtfs);
 
   // Add both routes to the same graph (enables transfers between routes)
-  graphBuilder.buildGraphForRoute(routeO1.route_id);
-  graphBuilder.buildGraphForRoute(routeS4.route_id);
+  graphBuilder.buildGraphForRoute(routeO1.route_id, testDate);
+  graphBuilder.buildGraphForRoute(routeS4.route_id, testDate);
 
   console.log(`\nUnified graph built (single graph containing both routes):`);
   console.log(`Total nodes: ${graphBuilder.getNodes().length}`);
@@ -170,6 +228,26 @@ async function main() {
       paths1.forEach((path, index) => {
         displaySimplifiedPath(gtfs, path, index + 1);
       });
+
+      // Find scheduled trips for each path
+      console.log('\n--- SCHEDULED TRIPS ---\n');
+      console.log(`Searching for scheduled trips departing after ${testTime}...\n`);
+
+      paths1.forEach((path, index) => {
+        const journey = GraphBuilder.findScheduledTrips(
+          gtfs,
+          path,
+          testDate,
+          testTimeSeconds,
+          minTransferDuration
+        );
+
+        if (journey) {
+          displayScheduledJourney(gtfs, journey, index + 1);
+        } else {
+          console.log(`\n  Path ${index + 1}: No scheduled trips found for this path\n`);
+        }
+      });
     }
   }
 
@@ -193,6 +271,26 @@ async function main() {
       // Display simplified paths (groups consecutive segments on same route/direction)
       paths2.forEach((path, index) => {
         displaySimplifiedPath(gtfs, path, index + 1);
+      });
+
+      // Find scheduled trips for each path
+      console.log('\n--- SCHEDULED TRIPS ---\n');
+      console.log(`Searching for scheduled trips departing after ${testTime}...\n`);
+
+      paths2.forEach((path, index) => {
+        const journey = GraphBuilder.findScheduledTrips(
+          gtfs,
+          path,
+          testDate,
+          testTimeSeconds,
+          minTransferDuration
+        );
+
+        if (journey) {
+          displayScheduledJourney(gtfs, journey, index + 1);
+        } else {
+          console.log(`\n  Path ${index + 1}: No scheduled trips found for this path\n`);
+        }
       });
     }
   }

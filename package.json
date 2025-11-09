@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node dist/test.js"
+    "test": "node dist/test.js",
+    "test:progressive": "node dist/test-progressive.js"
   },
   "keywords": [
     "gtfs",
