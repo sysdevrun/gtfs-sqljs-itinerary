@@ -9,6 +9,7 @@ interface ItineraryFormProps {
     toStopId: string;
     date: string;
     departureTime: number;
+    maxPaths: number;
   }) => void;
   isSearching: boolean;
 }
@@ -18,6 +19,7 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
   const [toStopId, setToStopId] = useState('');
   const [date, setDate] = useState('');
   const [timeHour, setTimeHour] = useState('06:00');
+  const [maxPaths, setMaxPaths] = useState(10);
 
   // Initialize with current date
   useEffect(() => {
@@ -41,7 +43,8 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
         fromStopId,
         toStopId,
         date: date.replace(/-/g, ''), // Convert YYYY-MM-DD to YYYYMMDD
-        departureTime
+        departureTime,
+        maxPaths
       });
     }
   };
@@ -50,7 +53,7 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
   useEffect(() => {
     handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromStopId, toStopId, date, timeHour]);
+  }, [fromStopId, toStopId, date, timeHour, maxPaths]);
 
   // Generate time options (1-hour increments)
   const timeOptions = [];
@@ -155,6 +158,24 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
               </svg>
             </button>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Max Itineraries
+          </label>
+          <select
+            value={maxPaths}
+            onChange={(e) => setMaxPaths(Number(e.target.value))}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSearching}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={15}>15</option>
+            <option value={20}>20</option>
+            <option value={30}>30</option>
+          </select>
         </div>
       </div>
 
