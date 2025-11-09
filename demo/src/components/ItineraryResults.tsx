@@ -122,13 +122,18 @@ export function ItineraryResults({ journeys, routes, stops }: ItineraryResultsPr
             {journey.legs.map((leg, legIdx) => {
               const routeInfo = getRouteInfo(leg.routeShortName, routes);
 
+              // Calculate transfer time if not first leg
+              const transferTime = legIdx > 0
+                ? leg.departureTime - journey.legs[legIdx - 1].arrivalTime
+                : 0;
+
               return (
                 <div key={legIdx}>
                   {legIdx > 0 && (
                     <div className="flex items-center my-4">
                       <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
                       <div className="px-4 text-sm font-medium text-gray-500">
-                        Transfer
+                        Transfer ({formatDuration(transferTime)})
                       </div>
                       <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
                     </div>

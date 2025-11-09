@@ -22,6 +22,7 @@ export interface ItineraryRequest {
   date: string;
   departureTime: number;
   minTransferDuration?: number;
+  maxPaths?: number;
 }
 
 class GTFSWorker {
@@ -92,7 +93,7 @@ class GTFSWorker {
     const paths = this.graphBuilder.findAllPaths(
       request.fromStopId,
       request.toStopId,
-      10, // maxPaths
+      request.maxPaths || 10, // maxPaths (default 10)
       3   // maxTransfers
     );
 

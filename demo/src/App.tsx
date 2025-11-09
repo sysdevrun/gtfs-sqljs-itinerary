@@ -49,6 +49,7 @@ function App() {
     toStopId: string;
     date: string;
     departureTime: number;
+    maxPaths: number;
   }) => {
     if (!worker) return;
 
