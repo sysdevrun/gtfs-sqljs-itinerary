@@ -52,12 +52,24 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromStopId, toStopId, date, timeHour]);
 
-  // Generate time options (2-hour increments)
+  // Generate time options (1-hour increments)
   const timeOptions = [];
-  for (let hour = 0; hour < 24; hour += 2) {
+  for (let hour = 0; hour < 24; hour += 1) {
     const timeStr = `${String(hour).padStart(2, '0')}:00`;
     timeOptions.push(timeStr);
   }
+
+  // Handle time increment/decrement
+  const adjustTime = (increment: number) => {
+    const [hours, minutes] = timeHour.split(':').map(Number);
+    let newHour = hours + increment;
+
+    // Wrap around at boundaries
+    if (newHour < 0) newHour = 23;
+    if (newHour > 23) newHour = 0;
+
+    setTimeHour(`${String(newHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -107,18 +119,42 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Departure Time
           </label>
-          <select
-            value={timeHour}
-            onChange={(e) => setTimeHour(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isSearching}
-          >
-            {timeOptions.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => adjustTime(-1)}
+              disabled={isSearching}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Previous hour"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <select
+              value={timeHour}
+              onChange={(e) => setTimeHour(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSearching}
+            >
+              {timeOptions.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => adjustTime(1)}
+              disabled={isSearching}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Next hour"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
