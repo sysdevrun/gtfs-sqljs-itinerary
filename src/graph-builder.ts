@@ -221,7 +221,7 @@ export class GraphBuilder {
   }
 
   /**
-   * Finds paths between two stops using BFS (finds shortest paths first)
+   * Finds paths between two stops using weighted search (prioritizes paths with fewer transfers)
    * @param startStopId The starting stop ID (will be converted to parent)
    * @param endStopId The ending stop ID (will be converted to parent)
    * @param maxPaths Maximum number of paths to return (default: 100)
@@ -244,21 +244,26 @@ export class GraphBuilder {
 
     const foundPaths: PathSegment[][] = [];
 
-    // BFS queue: each item is [currentNode, pathSoFar, visitedNodes]
+    // Priority queue item with cost tracking
     interface QueueItem {
       node: string;
       path: PathSegment[];
       visited: Set<string>;
+      cost: number; // Lower cost = fewer transfers
     }
 
+    // Priority queue (array sorted by cost)
     const queue: QueueItem[] = [{
       node: startParent,
       path: [],
-      visited: new Set([startParent])
+      visited: new Set([startParent]),
+      cost: 0
     }];
 
     while (queue.length > 0 && foundPaths.length < maxPaths) {
-      const { node, path, visited } = queue.shift()!;
+      // Sort queue by cost (Dijkstra-style: lowest cost first)
+      queue.sort((a, b) => a.cost - b.cost);
+      const { node, path, visited, cost } = queue.shift()!;
 
       // Check if we've reached the target
       if (node === endParent) {
@@ -288,6 +293,17 @@ export class GraphBuilder {
         // Get edge data
         const edgeData = this.graph.edge(edge) as TransitEdge;
 
+        // Calculate edge weight
+        // If we're changing routes, add high cost (penalize transfer)
+        // If staying on same route, add low cost
+        const lastSegment = path.length > 0 ? path[path.length - 1] : null;
+        const isTransfer = lastSegment &&
+          (lastSegment.routeId !== edgeData.routeId || lastSegment.directionId !== edgeData.directionId);
+
+        // Weight: 10 for transfer, 1 for staying on same route
+        const edgeWeight = isTransfer ? 10 : 1;
+        const newCost = cost + edgeWeight;
+
         // Create new path with this segment
         const newSegment: PathSegment = {
           startStop: node,
@@ -300,11 +316,12 @@ export class GraphBuilder {
         const newVisited = new Set(visited);
         newVisited.add(nextNode);
 
-        // Add to queue for BFS exploration
+        // Add to queue for weighted exploration
         queue.push({
           node: nextNode,
           path: newPath,
-          visited: newVisited
+          visited: newVisited,
+          cost: newCost
         });
       }
     }
