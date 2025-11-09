@@ -39,8 +39,16 @@ class GTFSWorker {
       onProgress(0.1);
     }
 
-    // Load GTFS from ZIP URL
-    this.gtfs = await GtfsSqlJs.fromZip(gtfsUrl);
+    // Load GTFS from ZIP URL with locateFile configuration for sql.js WASM
+    this.gtfs = await GtfsSqlJs.fromZip(gtfsUrl, {
+      locateFile: (filename: string) => {
+        // Return path to WASM file in public directory
+        // In development: /sql-wasm.wasm
+        // In production: /gtfs-sqljs-itinerary/sql-wasm.wasm (based on vite.config.ts base)
+        const base = import.meta.env.BASE_URL || '/';
+        return `${base}${filename}`;
+      }
+    });
 
     if (onProgress) {
       onProgress(1.0);
