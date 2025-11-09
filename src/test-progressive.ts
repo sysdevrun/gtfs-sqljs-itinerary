@@ -123,9 +123,9 @@ async function main() {
     console.log(`  Nodes: ${graphBuilder.getNodes().length}`);
     console.log(`  Edges: ${graphBuilder.getEdges().length}`);
 
-    // Find paths
+    // Find paths (limit to 100 paths, max 3 transfers)
     const pathStartTime = Date.now();
-    const paths = graphBuilder.findAllPaths(fromStop.stop_id, toStop.stop_id);
+    const paths = graphBuilder.findAllPaths(fromStop.stop_id, toStop.stop_id, 100, 3);
     const pathTime = Date.now() - pathStartTime;
 
     console.log(`\nPath finding completed in ${pathTime}ms`);

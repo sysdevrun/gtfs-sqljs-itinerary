@@ -221,70 +221,19 @@ export class GraphBuilder {
   }
 
   /**
-   * Helper function to find all simple paths using DFS
-   * @param current Current node
-   * @param target Target node
-   * @param visited Set of visited nodes
-   * @param currentPath Current path being explored
-   * @param allPaths Array to store all found paths
-   */
-  private findAllPathsDFS(
-    current: string,
-    target: string,
-    visited: Set<string>,
-    currentPath: PathSegment[],
-    allPaths: PathSegment[][]
-  ): void {
-    // Base case: reached target
-    if (current === target) {
-      allPaths.push([...currentPath]);
-      return;
-    }
-
-    // Mark current as visited
-    visited.add(current);
-
-    // Get all outgoing edges
-    const edges = this.graph.outEdges(current) || [];
-
-    for (const edge of edges) {
-      const nextNode = edge.w;
-
-      // Skip if already visited (avoid cycles)
-      if (visited.has(nextNode)) {
-        continue;
-      }
-
-      // Get edge data
-      const edgeData = this.graph.edge(edge) as TransitEdge;
-
-      // Add segment to current path
-      const segment: PathSegment = {
-        startStop: current,
-        routeId: edgeData.routeId,
-        directionId: edgeData.directionId,
-        endStop: nextNode
-      };
-      currentPath.push(segment);
-
-      // Recursively explore
-      this.findAllPathsDFS(nextNode, target, visited, currentPath, allPaths);
-
-      // Backtrack
-      currentPath.pop();
-    }
-
-    // Unmark current node
-    visited.delete(current);
-  }
-
-  /**
-   * Finds all paths between two stops
+   * Finds paths between two stops using BFS (finds shortest paths first)
    * @param startStopId The starting stop ID (will be converted to parent)
    * @param endStopId The ending stop ID (will be converted to parent)
+   * @param maxPaths Maximum number of paths to return (default: 100)
+   * @param maxTransfers Maximum number of transfers allowed (default: 5)
    * @returns Array of paths, where each path is an array of PathSegments
    */
-  public findAllPaths(startStopId: string, endStopId: string): PathSegment[][] {
+  public findAllPaths(
+    startStopId: string,
+    endStopId: string,
+    maxPaths: number = 100,
+    maxTransfers: number = 5
+  ): PathSegment[][] {
     const startParent = this.findGrandestParent(startStopId);
     const endParent = this.findGrandestParent(endStopId);
 
@@ -293,13 +242,74 @@ export class GraphBuilder {
       return [];
     }
 
-    const allPaths: PathSegment[][] = [];
-    const visited = new Set<string>();
-    const currentPath: PathSegment[] = [];
+    const foundPaths: PathSegment[][] = [];
 
-    this.findAllPathsDFS(startParent, endParent, visited, currentPath, allPaths);
+    // BFS queue: each item is [currentNode, pathSoFar, visitedNodes]
+    interface QueueItem {
+      node: string;
+      path: PathSegment[];
+      visited: Set<string>;
+    }
 
-    return allPaths;
+    const queue: QueueItem[] = [{
+      node: startParent,
+      path: [],
+      visited: new Set([startParent])
+    }];
+
+    while (queue.length > 0 && foundPaths.length < maxPaths) {
+      const { node, path, visited } = queue.shift()!;
+
+      // Check if we've reached the target
+      if (node === endParent) {
+        foundPaths.push([...path]);
+        continue; // Don't explore further from target
+      }
+
+      // Check if we've exceeded max transfers
+      // Convert path to legs to count transfers
+      const legs = GraphBuilder.pathToTripLegs(path);
+      if (legs.length >= maxTransfers + 1) {
+        // Already at max transfers, don't explore further
+        continue;
+      }
+
+      // Explore all outgoing edges
+      const edges = this.graph.outEdges(node) || [];
+
+      for (const edge of edges) {
+        const nextNode = edge.w;
+
+        // Skip if already visited (avoid cycles)
+        if (visited.has(nextNode)) {
+          continue;
+        }
+
+        // Get edge data
+        const edgeData = this.graph.edge(edge) as TransitEdge;
+
+        // Create new path with this segment
+        const newSegment: PathSegment = {
+          startStop: node,
+          routeId: edgeData.routeId,
+          directionId: edgeData.directionId,
+          endStop: nextNode
+        };
+
+        const newPath = [...path, newSegment];
+        const newVisited = new Set(visited);
+        newVisited.add(nextNode);
+
+        // Add to queue for BFS exploration
+        queue.push({
+          node: nextNode,
+          path: newPath,
+          visited: newVisited
+        });
+      }
+    }
+
+    return foundPaths;
   }
 
   /**
