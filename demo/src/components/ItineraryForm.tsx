@@ -170,11 +170,16 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSearching}
           >
-            <option value={5}>5</option>
             <option value={10}>10</option>
-            <option value={15}>15</option>
             <option value={20}>20</option>
             <option value={30}>30</option>
+            <option value={50}>50</option>
+            <option value={75}>75</option>
+            <option value={100}>100</option>
+            <option value={150}>150</option>
+            <option value={200}>200</option>
+            <option value={250}>250</option>
+            <option value={300}>300</option>
           </select>
         </div>
       </div>
