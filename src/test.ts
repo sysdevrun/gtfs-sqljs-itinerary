@@ -36,21 +36,21 @@ async function main() {
   console.log(`\nFound route S4: ${routeS4.route_short_name} - ${routeS4.route_long_name}`);
   console.log(`Route ID: ${routeS4.route_id}`);
 
-  // Create graph builder
-  console.log('\n\nBuilding graph for routes O1 and S4...');
+  // Create graph builder with a single unified graph
+  console.log('\n\nBuilding unified graph with routes O1 and S4...');
   const graphBuilder = new GraphBuilder(gtfs);
 
-  // Build graph for both routes
+  // Add both routes to the same graph (enables transfers between routes)
   graphBuilder.buildGraphForRoute(routeO1.route_id);
   graphBuilder.buildGraphForRoute(routeS4.route_id);
 
-  console.log(`\nGraph built:`);
+  console.log(`\nUnified graph built (single graph containing both routes):`);
   console.log(`Total nodes: ${graphBuilder.getNodes().length}`);
   console.log(`Total edges: ${graphBuilder.getEdges().length}`);
 
-  // Get edges for route O1
+  // Get edges for route O1 (subset of the unified graph)
   const edgesO1 = graphBuilder.getEdgesForRoute(routeO1.route_id);
-  console.log(`\nRoute O1 edges: ${edgesO1.length}`);
+  console.log(`\nRoute O1 edges in graph: ${edgesO1.length}`);
 
   console.log('\nEdges (connections) for route O1:');
   for (const edge of edgesO1) {
@@ -66,9 +66,9 @@ async function main() {
     );
   }
 
-  // Get edges for route S4
+  // Get edges for route S4 (subset of the unified graph)
   const edgesS4 = graphBuilder.getEdgesForRoute(routeS4.route_id);
-  console.log(`\nRoute S4 edges: ${edgesS4.length}`);
+  console.log(`\nRoute S4 edges in graph: ${edgesS4.length}`);
 
   console.log('\nEdges (connections) for route S4:');
   for (const edge of edgesS4) {
