@@ -30,8 +30,8 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
   // Parent stops (stations) for selection
   const parentStops = stops.filter(s => !s.parent_station);
 
-  // Trigger search on any form change if all fields are filled
-  useEffect(() => {
+  // Manual search handler
+  const handleSearch = () => {
     if (fromStopId && toStopId && date && timeHour) {
       const [hours, minutes] = timeHour.split(':').map(Number);
       const departureTime = hours * 3600 + minutes * 60;
@@ -43,7 +43,13 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
         departureTime
       });
     }
-  }, [fromStopId, toStopId, date, timeHour, onSearch]);
+  };
+
+  // Trigger search on any form change if all fields are filled
+  useEffect(() => {
+    handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromStopId, toStopId, date, timeHour]);
 
   // Generate time options (2-hour increments)
   const timeOptions = [];
@@ -127,10 +133,20 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
         </div>
       </div>
 
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={handleSearch}
+          disabled={isSearching || !fromStopId || !toStopId || !date || !timeHour}
+          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSearching ? 'Searching...' : 'Search Itineraries'}
+        </button>
+      </div>
+
       {isSearching && (
         <div className="mt-4 flex items-center justify-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-gray-600">Searching for itineraries...</span>
+          <span className="ml-2 text-gray-600">Finding best routes...</span>
         </div>
       )}
     </div>

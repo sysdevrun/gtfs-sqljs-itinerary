@@ -489,6 +489,12 @@ export class GraphBuilder {
       const startStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.startStop);
       const endStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.endStop);
 
+      // Get actual stop names (use parent stop's name)
+      const startStops = gtfs.getStops({ stopId: leg.startStop });
+      const endStops = gtfs.getStops({ stopId: leg.endStop });
+      const startStopName = startStops?.[0]?.stop_name || leg.startStop;
+      const endStopName = endStops?.[0]?.stop_name || leg.endStop;
+
       // Get stop times filtered by trip IDs (only for our route/direction/date trips)
       const tripIds = trips.map((t: Trip) => t.trip_id);
       const stopTimesForTrips = gtfs.getStopTimes({ tripId: tripIds });
@@ -565,8 +571,8 @@ export class GraphBuilder {
         tripId: matchedTrip.trip_id,
         tripShortName,
         routeShortName,
-        startStop: leg.startStop,
-        endStop: leg.endStop,
+        startStop: startStopName,
+        endStop: endStopName,
         departureTime: matchedDepartureTime,
         arrivalTime: matchedArrivalTime
       });
