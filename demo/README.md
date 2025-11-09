@@ -177,15 +177,41 @@ const paths = this.graphBuilder.findAllPaths(
 
 ## Deployment
 
-### GitHub Pages
+### Automatic Deployment (GitHub Actions)
 
-1. Update `base` in `vite.config.ts` to match your repo name
-2. Build the project: `npm run build`
-3. Deploy the `dist` directory to GitHub Pages
+This repository includes a GitHub Actions workflow that automatically builds and deploys the demo to GitHub Pages when changes are pushed to the `main` branch.
+
+**Setup:**
+1. Go to your repository Settings → Pages
+2. Under "Source", select "GitHub Actions"
+3. Push to the `main` branch to trigger deployment
+4. The demo will be available at `https://[username].github.io/gtfs-sqljs-itinerary/`
+
+The workflow is defined in `.github/workflows/deploy.yml`.
 
 ### Manual Deployment
 
-The `dist` directory contains all static files needed for deployment to any web server.
+If you prefer to deploy manually:
+
+1. Build the project:
+   ```bash
+   npm run build
+   ```
+
+2. The `dist` directory contains all static files needed for deployment
+
+3. Deploy the `dist` directory to:
+   - GitHub Pages (manually upload)
+   - Netlify
+   - Vercel
+   - Any static hosting service
+
+**Note:** If deploying to a different base path, update `base` in `vite.config.ts`:
+```typescript
+export default defineConfig({
+  base: '/your-repo-name/',  // Update this
+  // ...
+})
 
 ## Performance Considerations
 
