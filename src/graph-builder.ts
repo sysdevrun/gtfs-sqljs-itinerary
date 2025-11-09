@@ -479,48 +479,68 @@ export class GraphBuilder {
       const startStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.startStop);
       const endStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.endStop);
 
+      // Optimization: Get stop times for departure stop first
+      // This filters down to only trips that actually serve this stop
+      const allStopTimes = gtfs.getStopTimes();
+      if (!allStopTimes) {
+        return null;
+      }
+
+      // Get trip IDs that we're interested in (from the route/direction/date filter)
+      const validTripIds = new Set(trips.map(t => t.trip_id));
+
+      // Find stop times at departure stop for our valid trips
+      const departureStopTimes = allStopTimes.filter(st =>
+        startStopIds.includes(st.stop_id) && validTripIds.has(st.trip_id)
+      );
+
+      if (departureStopTimes.length === 0) {
+        return null; // No trips serve the departure stop
+      }
+
+      // Sort by departure time to find earliest matching trip
+      departureStopTimes.sort((a, b) => {
+        const timeA = GraphBuilder.timeToSeconds(a.departure_time);
+        const timeB = GraphBuilder.timeToSeconds(b.departure_time);
+        return timeA - timeB;
+      });
+
       // Find a trip that:
-      // 1. Contains both start and end stops (or their children)
-      // 2. Departs after currentTime at the start stop
+      // 1. Departs after currentTime
+      // 2. Also serves the arrival stop (after the departure stop)
       let matchedTrip = null;
       let matchedDepartureTime = 0;
       let matchedArrivalTime = 0;
+      let matchedDepartureStopTime = null;
 
-      for (const trip of trips) {
-        // Get stop times for this trip
-        const stopTimes = gtfs.getStopTimes({ tripId: trip.trip_id });
+      for (const depStopTime of departureStopTimes) {
+        const depTime = GraphBuilder.timeToSeconds(depStopTime.departure_time);
 
-        if (!stopTimes || stopTimes.length === 0) {
+        // Skip if this departure is too early
+        if (depTime < currentTime) {
           continue;
         }
 
-        // Find start and end stop in this trip (check all related stops)
-        const startStopTime = stopTimes.find(st => startStopIds.includes(st.stop_id));
-        const endStopTime = stopTimes.find(st => endStopIds.includes(st.stop_id));
+        // Now find arrival stop time for the same trip
+        const arrivalStopTime = allStopTimes.find(st =>
+          st.trip_id === depStopTime.trip_id &&
+          endStopIds.includes(st.stop_id) &&
+          st.stop_sequence > depStopTime.stop_sequence
+        );
 
-        if (!startStopTime || !endStopTime) {
-          // This trip doesn't serve both stops
+        if (!arrivalStopTime) {
+          // This trip doesn't serve the arrival stop after departure stop
           continue;
         }
 
-        // Check if end stop comes after start stop in the sequence
-        if (endStopTime.stop_sequence <= startStopTime.stop_sequence) {
-          // Wrong direction or invalid sequence
-          continue;
-        }
+        // Found a matching trip!
+        const arrTime = GraphBuilder.timeToSeconds(arrivalStopTime.arrival_time);
 
-        // Convert departure time to seconds
-        const depTime = GraphBuilder.timeToSeconds(startStopTime.departure_time);
-        const arrTime = GraphBuilder.timeToSeconds(endStopTime.arrival_time);
-
-        // Check if this trip departs after currentTime
-        if (depTime >= currentTime) {
-          // Found a matching trip!
-          matchedTrip = trip;
-          matchedDepartureTime = depTime;
-          matchedArrivalTime = arrTime;
-          break; // Take the first available trip
-        }
+        matchedTrip = trips.find(t => t.trip_id === depStopTime.trip_id);
+        matchedDepartureTime = depTime;
+        matchedArrivalTime = arrTime;
+        matchedDepartureStopTime = depStopTime;
+        break; // Take the earliest available trip
       }
 
       if (!matchedTrip) {
