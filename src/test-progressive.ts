@@ -98,10 +98,11 @@ async function main() {
 
   console.log('='.repeat(80));
 
-  // Test with 1, 2, 3, ..., N routes
-  const maxRoutes = Math.min(sortedRoutes.length, 10); // Test up to 10 routes max
+  // Test with 8, 9, 10, ..., all routes
+  const startRoutes = 8;
+  const maxRoutes = sortedRoutes.length; // Test all routes
 
-  for (let numRoutes = 1; numRoutes <= maxRoutes; numRoutes++) {
+  for (let numRoutes = startRoutes; numRoutes <= maxRoutes; numRoutes++) {
     console.log(`\n${'='.repeat(80)}`);
     console.log(`TEST ${numRoutes}: Using ${numRoutes} route(s)`);
     console.log('='.repeat(80));
