@@ -31,6 +31,39 @@ export interface SimplifiedTrip {
 }
 
 /**
+ * Represents a leg with transfer information
+ */
+export interface TripLeg {
+  startStop: string;
+  endStop: string;
+  routeId: string;
+  directionId: number;
+}
+
+/**
+ * Represents a scheduled trip match for a leg
+ */
+export interface ScheduledLeg {
+  tripId: string;
+  tripShortName: string;
+  routeShortName: string;
+  startStop: string;
+  endStop: string;
+  departureTime: number; // seconds since midnight
+  arrivalTime: number; // seconds since midnight
+}
+
+/**
+ * Represents a complete scheduled journey
+ */
+export interface ScheduledJourney {
+  legs: ScheduledLeg[];
+  totalDuration: number; // in seconds
+  departureTime: number; // seconds since midnight
+  arrivalTime: number; // seconds since midnight
+}
+
+/**
  * Builds and manages a directed graph of transit connections
  */
 export class GraphBuilder {
@@ -108,18 +141,18 @@ export class GraphBuilder {
    * Builds the graph for a specific route and direction
    * @param routeId The route ID
    * @param directionId The direction ID (0 or 1)
-   * @param date Optional date for filtering trips
+   * @param date Date for filtering trips (YYYYMMDD format, required)
    */
   private buildGraphForRouteDirection(
     routeId: string,
     directionId: number,
-    date?: string
+    date: string
   ): void {
     // Get all trips for this route and direction
     const trips = this.gtfs.getTrips({
       routeId,
       directionId,
-      ...(date && { date })
+      date
     });
 
     if (!trips || trips.length === 0) {
@@ -146,9 +179,9 @@ export class GraphBuilder {
 
   /**
    * Builds the complete transit graph for all routes
-   * @param date Optional date for filtering trips
+   * @param date Date for filtering trips (YYYYMMDD format, required)
    */
-  public buildGraph(date?: string): void {
+  public buildGraph(date: string): void {
     // Get all routes
     const routes = this.gtfs.getRoutes();
 
@@ -169,9 +202,9 @@ export class GraphBuilder {
   /**
    * Builds the graph for a specific route
    * @param routeId The route ID to build graph for
-   * @param date Optional date for filtering trips
+   * @param date Date for filtering trips (YYYYMMDD format, required)
    */
-  public buildGraphForRoute(routeId: string, date?: string): void {
+  public buildGraphForRoute(routeId: string, date: string): void {
     // Direction 0
     this.buildGraphForRouteDirection(routeId, 0, date);
 
@@ -349,5 +382,181 @@ export class GraphBuilder {
     }
 
     return simplifiedTrips;
+  }
+
+  /**
+   * Converts a path to trip legs (only transfers - one entry per route/direction change)
+   * @param path Array of path segments
+   * @returns Array of trip legs
+   */
+  public static pathToTripLegs(path: PathSegment[]): TripLeg[] {
+    const simplified = GraphBuilder.simplifyPath(path);
+    return simplified.map(trip => ({
+      startStop: trip.startStop,
+      endStop: trip.endStop,
+      routeId: trip.routeId,
+      directionId: trip.directionId
+    }));
+  }
+
+  /**
+   * Converts time string (HH:MM:SS) to seconds since midnight
+   * @param timeString Time in HH:MM:SS format
+   * @returns Seconds since midnight
+   */
+  private static timeToSeconds(timeString: string): number {
+    const parts = timeString.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    const seconds = parseInt(parts[2], 10);
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
+  /**
+   * Gets all stop IDs related to a stop (including children if it's a parent station)
+   * @param gtfs GTFS data instance
+   * @param stopId The stop ID (could be a parent station)
+   * @returns Array of stop IDs (parent and all children)
+   */
+  private static getRelatedStopIds(gtfs: GtfsSqlJs, stopId: string): string[] {
+    const stopIds = [stopId];
+
+    // Get all stops
+    const allStops = gtfs.getStops();
+    if (!allStops) {
+      return stopIds;
+    }
+
+    // Find all stops that have this stop as parent_station
+    const childStops = allStops.filter(stop => stop.parent_station === stopId);
+    stopIds.push(...childStops.map(stop => stop.stop_id));
+
+    return stopIds;
+  }
+
+  /**
+   * Finds scheduled trips matching the path for a specific date and time
+   * @param gtfs GTFS data instance
+   * @param path Array of path segments
+   * @param date Date in YYYYMMDD format
+   * @param departureTime Departure time in seconds since midnight
+   * @param minTransferDuration Minimum transfer duration in seconds
+   * @returns Scheduled journey if found, null otherwise
+   */
+  public static findScheduledTrips(
+    gtfs: GtfsSqlJs,
+    path: PathSegment[],
+    date: string,
+    departureTime: number,
+    minTransferDuration: number
+  ): ScheduledJourney | null {
+    // Step 1: Convert path to trip legs
+    const legs = GraphBuilder.pathToTripLegs(path);
+
+    if (legs.length === 0) {
+      return null;
+    }
+
+    const scheduledLegs: ScheduledLeg[] = [];
+    let currentTime = departureTime;
+
+    // Step 2: For each leg, find matching trips
+    for (let i = 0; i < legs.length; i++) {
+      const leg = legs[i];
+
+      // Get all trips for this route and direction on the given date
+      const trips = gtfs.getTrips({
+        routeId: leg.routeId,
+        directionId: leg.directionId,
+        date
+      });
+
+      if (!trips || trips.length === 0) {
+        return null; // No trips available for this leg
+      }
+
+      // Get all related stop IDs (including children) for start and end stops
+      const startStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.startStop);
+      const endStopIds = GraphBuilder.getRelatedStopIds(gtfs, leg.endStop);
+
+      // Find a trip that:
+      // 1. Contains both start and end stops (or their children)
+      // 2. Departs after currentTime at the start stop
+      let matchedTrip = null;
+      let matchedDepartureTime = 0;
+      let matchedArrivalTime = 0;
+
+      for (const trip of trips) {
+        // Get stop times for this trip
+        const stopTimes = gtfs.getStopTimes({ tripId: trip.trip_id });
+
+        if (!stopTimes || stopTimes.length === 0) {
+          continue;
+        }
+
+        // Find start and end stop in this trip (check all related stops)
+        const startStopTime = stopTimes.find(st => startStopIds.includes(st.stop_id));
+        const endStopTime = stopTimes.find(st => endStopIds.includes(st.stop_id));
+
+        if (!startStopTime || !endStopTime) {
+          // This trip doesn't serve both stops
+          continue;
+        }
+
+        // Check if end stop comes after start stop in the sequence
+        if (endStopTime.stop_sequence <= startStopTime.stop_sequence) {
+          // Wrong direction or invalid sequence
+          continue;
+        }
+
+        // Convert departure time to seconds
+        const depTime = GraphBuilder.timeToSeconds(startStopTime.departure_time);
+        const arrTime = GraphBuilder.timeToSeconds(endStopTime.arrival_time);
+
+        // Check if this trip departs after currentTime
+        if (depTime >= currentTime) {
+          // Found a matching trip!
+          matchedTrip = trip;
+          matchedDepartureTime = depTime;
+          matchedArrivalTime = arrTime;
+          break; // Take the first available trip
+        }
+      }
+
+      if (!matchedTrip) {
+        return null; // No suitable trip found for this leg
+      }
+
+      // Get route info
+      const routes = gtfs.getRoutes({ routeId: leg.routeId });
+      const routeShortName = routes?.[0]?.route_short_name || leg.routeId;
+
+      // Get trip short name (use trip_short_name or trip_id)
+      const tripShortName = (matchedTrip as any).trip_short_name || matchedTrip.trip_id;
+
+      // Add this scheduled leg
+      scheduledLegs.push({
+        tripId: matchedTrip.trip_id,
+        tripShortName,
+        routeShortName,
+        startStop: leg.startStop,
+        endStop: leg.endStop,
+        departureTime: matchedDepartureTime,
+        arrivalTime: matchedArrivalTime
+      });
+
+      // Update current time for next leg (arrival + transfer time)
+      currentTime = matchedArrivalTime + minTransferDuration;
+    }
+
+    // Calculate total duration
+    const totalDuration = scheduledLegs[scheduledLegs.length - 1].arrivalTime - scheduledLegs[0].departureTime;
+
+    return {
+      legs: scheduledLegs,
+      totalDuration,
+      departureTime: scheduledLegs[0].departureTime,
+      arrivalTime: scheduledLegs[scheduledLegs.length - 1].arrivalTime
+    };
   }
 }
