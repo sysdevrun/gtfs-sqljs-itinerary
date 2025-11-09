@@ -20,6 +20,17 @@ export interface PathSegment {
 }
 
 /**
+ * Represents a simplified trip (consecutive segments on same route/direction)
+ */
+export interface SimplifiedTrip {
+  startStop: string;
+  endStop: string;
+  routeId: string;
+  directionId: number;
+  intermediateStops: string[];
+}
+
+/**
  * Builds and manages a directed graph of transit connections
  */
 export class GraphBuilder {
@@ -286,5 +297,57 @@ export class GraphBuilder {
    */
   public getEdgesForRoute(routeId: string): Array<{ v: string; w: string; data: TransitEdge }> {
     return this.getEdges().filter(edge => edge.data.routeId === routeId);
+  }
+
+  /**
+   * Simplifies a path by grouping consecutive segments on the same route/direction
+   * into single trips, hiding intermediate stops when there's no transfer
+   * @param path Array of path segments to simplify
+   * @returns Array of simplified trips
+   */
+  public static simplifyPath(path: PathSegment[]): SimplifiedTrip[] {
+    if (path.length === 0) {
+      return [];
+    }
+
+    const simplifiedTrips: SimplifiedTrip[] = [];
+    let currentTrip: SimplifiedTrip | null = null;
+
+    for (let i = 0; i < path.length; i++) {
+      const segment = path[i];
+
+      // If no current trip or different route/direction, start a new trip
+      if (!currentTrip ||
+          currentTrip.routeId !== segment.routeId ||
+          currentTrip.directionId !== segment.directionId) {
+
+        // Save the previous trip if it exists
+        if (currentTrip) {
+          simplifiedTrips.push(currentTrip);
+        }
+
+        // Start a new trip
+        currentTrip = {
+          startStop: segment.startStop,
+          endStop: segment.endStop,
+          routeId: segment.routeId,
+          directionId: segment.directionId,
+          intermediateStops: []
+        };
+      } else {
+        // Same route/direction - extend the current trip
+        // Add the previous end stop as an intermediate stop
+        currentTrip.intermediateStops.push(currentTrip.endStop);
+        // Update the end stop to the current segment's end
+        currentTrip.endStop = segment.endStop;
+      }
+    }
+
+    // Don't forget to add the last trip
+    if (currentTrip) {
+      simplifiedTrips.push(currentTrip);
+    }
+
+    return simplifiedTrips;
   }
 }

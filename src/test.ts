@@ -1,6 +1,44 @@
 import { GtfsSqlJs } from 'gtfs-sqljs';
-import { GraphBuilder } from './graph-builder';
+import { GraphBuilder, PathSegment, SimplifiedTrip } from './graph-builder';
 import * as path from 'path';
+
+/**
+ * Helper function to display simplified trips
+ */
+function displaySimplifiedPath(
+  gtfs: GtfsSqlJs,
+  path: PathSegment[],
+  pathNumber: number
+): void {
+  const simplifiedTrips = GraphBuilder.simplifyPath(path);
+
+  console.log(`Path ${pathNumber} (${simplifiedTrips.length} trip(s)):`);
+
+  simplifiedTrips.forEach((trip, tripIndex) => {
+    // Get stop names
+    const fromStops = gtfs.getStops({ stopId: trip.startStop });
+    const toStops = gtfs.getStops({ stopId: trip.endStop });
+
+    const fromName = fromStops?.[0]?.stop_name || trip.startStop;
+    const toName = toStops?.[0]?.stop_name || trip.endStop;
+
+    // Get route info
+    const routes = gtfs.getRoutes({ routeId: trip.routeId });
+    const routeName = routes?.[0]?.route_short_name || trip.routeId;
+
+    // Display trip
+    console.log(
+      `  Trip ${tripIndex + 1}: ${fromName} -> ${toName} via Route ${routeName}, Direction ${trip.directionId}`
+    );
+
+    // Optionally show intermediate stops count if any
+    if (trip.intermediateStops.length > 0) {
+      console.log(`           (${trip.intermediateStops.length} intermediate stop(s))`);
+    }
+  });
+
+  console.log('');
+}
 
 async function main() {
   console.log('Loading GTFS data from car-jaune.gtfs.zip...');
@@ -125,29 +163,13 @@ async function main() {
 
     console.log(`\nFound ${paths1.length} path(s):\n`);
 
-    paths1.forEach((path, index) => {
-      console.log(`Path ${index + 1}:`);
-      path.forEach((segment, segIndex) => {
-        // Get stop names
-        const fromStops = gtfs.getStops({ stopId: segment.startStop });
-        const toStops = gtfs.getStops({ stopId: segment.endStop });
-
-        const fromName = fromStops?.[0]?.stop_name || segment.startStop;
-        const toName = toStops?.[0]?.stop_name || segment.endStop;
-
-        // Get route info
-        const routesForSegment = gtfs.getRoutes({ routeId: segment.routeId });
-        const routeName = routesForSegment?.[0]?.route_short_name || segment.routeId;
-
-        console.log(
-          `  ${segIndex + 1}. ${fromName} -> ${toName} (Route ${routeName}, Direction ${segment.directionId})`
-        );
-      });
-      console.log('');
-    });
-
     if (paths1.length === 0) {
       console.log('No paths found between these stops.');
+    } else {
+      // Display simplified paths (groups consecutive segments on same route/direction)
+      paths1.forEach((path, index) => {
+        displaySimplifiedPath(gtfs, path, index + 1);
+      });
     }
   }
 
@@ -165,29 +187,13 @@ async function main() {
 
     console.log(`\nFound ${paths2.length} path(s):\n`);
 
-    paths2.forEach((path, index) => {
-      console.log(`Path ${index + 1}:`);
-      path.forEach((segment, segIndex) => {
-        // Get stop names
-        const fromStops = gtfs.getStops({ stopId: segment.startStop });
-        const toStops = gtfs.getStops({ stopId: segment.endStop });
-
-        const fromName = fromStops?.[0]?.stop_name || segment.startStop;
-        const toName = toStops?.[0]?.stop_name || segment.endStop;
-
-        // Get route info
-        const routesForSegment = gtfs.getRoutes({ routeId: segment.routeId });
-        const routeName = routesForSegment?.[0]?.route_short_name || segment.routeId;
-
-        console.log(
-          `  ${segIndex + 1}. ${fromName} -> ${toName} (Route ${routeName}, Direction ${segment.directionId})`
-        );
-      });
-      console.log('');
-    });
-
     if (paths2.length === 0) {
       console.log('No paths found between these stops.');
+    } else {
+      // Display simplified paths (groups consecutive segments on same route/direction)
+      paths2.forEach((path, index) => {
+        displaySimplifiedPath(gtfs, path, index + 1);
+      });
     }
   }
 }

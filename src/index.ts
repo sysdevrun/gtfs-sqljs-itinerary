@@ -1,1 +1,1 @@
-export { GraphBuilder, TransitEdge, PathSegment } from './graph-builder';
+export { GraphBuilder, TransitEdge, PathSegment, SimplifiedTrip } from './graph-builder';
