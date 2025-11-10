@@ -586,7 +586,11 @@ Contributions are welcome! Please:
 
 ## License
 
-MIT
+MIT License
+
+Copyright (c) 2025 Théophile Helleboid / SysDevRun
+
+See [LICENSE](./LICENSE) file for details.
 
 ## Credits
 
