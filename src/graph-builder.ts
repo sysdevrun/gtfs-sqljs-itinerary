@@ -468,22 +468,67 @@ export class GraphBuilder {
    * @param date Date in YYYYMMDD format
    * @param departureTime Departure time in seconds since midnight
    * @param minTransferDuration Minimum transfer duration in seconds
-   * @returns Scheduled journey if found, null otherwise
+   * @param journeysCount Number of journeys to find
+   * @returns Array of scheduled journeys (empty array if none found)
    */
   public static findScheduledTrips(
     gtfs: GtfsSqlJs,
     path: PathSegment[],
     date: string,
     departureTime: number,
-    minTransferDuration: number
-  ): ScheduledJourney | null {
+    minTransferDuration: number,
+    journeysCount: number
+  ): ScheduledJourney[] {
     // Step 1: Convert path to trip legs
     const legs = GraphBuilder.pathToTripLegs(path);
 
     if (legs.length === 0) {
-      return null;
+      return [];
     }
 
+    const journeys: ScheduledJourney[] = [];
+    let searchDepartureTime = departureTime;
+
+    // Try to find up to journeysCount journeys
+    for (let journeyIdx = 0; journeyIdx < journeysCount; journeyIdx++) {
+      const journey = GraphBuilder.findSingleScheduledTrip(
+        gtfs,
+        legs,
+        date,
+        searchDepartureTime,
+        minTransferDuration
+      );
+
+      if (!journey) {
+        // No more journeys found
+        break;
+      }
+
+      journeys.push(journey);
+
+      // Next search should start strictly after this journey's departure
+      searchDepartureTime = journey.departureTime + 1;
+    }
+
+    return journeys;
+  }
+
+  /**
+   * Finds a single scheduled trip matching the leg requirements
+   * @param gtfs The GTFS database instance
+   * @param legs The trip legs to match
+   * @param date The date to search (YYYYMMDD format)
+   * @param departureTime Departure time in seconds since midnight
+   * @param minTransferDuration Minimum transfer duration in seconds
+   * @returns Scheduled journey if found, null otherwise
+   */
+  private static findSingleScheduledTrip(
+    gtfs: GtfsSqlJs,
+    legs: TripLeg[],
+    date: string,
+    departureTime: number,
+    minTransferDuration: number
+  ): ScheduledJourney | null {
     const scheduledLegs: ScheduledLeg[] = [];
     let currentTime = departureTime;
 

@@ -76,14 +76,14 @@ const paths = graphBuilder.findAllPaths(
 
 // 5. Find scheduled trips matching the paths
 const journeys = paths
-  .map(path => GraphBuilder.findScheduledTrips(
+  .flatMap(path => GraphBuilder.findScheduledTrips(
     gtfs,
     path,
     date,
     13 * 3600 + 55 * 60,     // departure time (13:55 in seconds)
-    300                       // min transfer duration (5 minutes)
-  ))
-  .filter(j => j !== null);
+    300,                      // min transfer duration (5 minutes)
+    3                         // number of journeys to find per path
+  ));
 
 // 6. Display results
 journeys.forEach(journey => {
@@ -156,9 +156,9 @@ Simplifies a path by grouping consecutive segments on the same route/direction.
 const simplified = GraphBuilder.simplifyPath(path);
 ```
 
-##### `static findScheduledTrips(gtfs: GtfsSqlJs, path: PathSegment[], date: string, departureTime: number, minTransferDuration: number): ScheduledJourney | null`
+##### `static findScheduledTrips(gtfs: GtfsSqlJs, path: PathSegment[], date: string, departureTime: number, minTransferDuration: number, journeysCount: number): ScheduledJourney[]`
 
-Finds actual scheduled trips matching a theoretical path.
+Finds multiple scheduled trips matching a theoretical path, starting from the specified departure time.
 
 **Parameters:**
 - `gtfs` - GtfsSqlJs instance
@@ -166,17 +166,19 @@ Finds actual scheduled trips matching a theoretical path.
 - `date` - Service date (YYYYMMDD format)
 - `departureTime` - Desired departure time in seconds since midnight
 - `minTransferDuration` - Minimum transfer time in seconds
+- `journeysCount` - Number of journeys to find
 
-**Returns:** ScheduledJourney with actual trip IDs and times, or null if no match found
+**Returns:** Array of ScheduledJourney objects with actual trip IDs and times (empty array if no match found)
 
 **Example:**
 ```typescript
-const journey = GraphBuilder.findScheduledTrips(
+const journeys = GraphBuilder.findScheduledTrips(
   gtfs,
   path,
   '20251110',
   13 * 3600 + 55 * 60,  // 13:55
-  300                    // 5 minutes
+  300,                   // 5 minutes
+  3                      // find 3 journeys
 );
 ```
 
