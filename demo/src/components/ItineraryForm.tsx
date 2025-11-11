@@ -10,6 +10,7 @@ interface ItineraryFormProps {
     date: string;
     departureTime: number;
     maxPaths: number;
+    maxTransfers: number;
     journeysCount: number;
   }) => void;
   isSearching: boolean;
@@ -21,6 +22,7 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
   const [date, setDate] = useState('');
   const [timeHour, setTimeHour] = useState('06:00');
   const [maxPaths, setMaxPaths] = useState(10);
+  const [maxTransfers, setMaxTransfers] = useState(3);
   const [journeysCount, setJourneysCount] = useState(3);
 
   // Initialize with current date
@@ -47,6 +49,7 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
         date: date.replace(/-/g, ''), // Convert YYYY-MM-DD to YYYYMMDD
         departureTime,
         maxPaths,
+        maxTransfers,
         journeysCount
       });
     }
@@ -56,7 +59,7 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
   useEffect(() => {
     handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromStopId, toStopId, date, timeHour, maxPaths, journeysCount]);
+  }, [fromStopId, toStopId, date, timeHour, maxPaths, maxTransfers, journeysCount]);
 
   // Generate time options (1-hour increments)
   const timeOptions = [];
@@ -207,6 +210,45 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
               type="button"
               onClick={() => adjustMaxPaths(1)}
               disabled={isSearching || maxPaths >= 500}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Increase"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Max Transfers
+          </label>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => setMaxTransfers(Math.max(0, maxTransfers - 1))}
+              disabled={isSearching || maxTransfers <= 0}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Decrease"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <input
+              type="number"
+              value={maxTransfers}
+              onChange={(e) => setMaxTransfers(Math.max(0, Math.min(10, Number(e.target.value) || 0)))}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-center"
+              disabled={isSearching}
+              min="0"
+              max="10"
+            />
+            <button
+              type="button"
+              onClick={() => setMaxTransfers(Math.min(10, maxTransfers + 1))}
+              disabled={isSearching || maxTransfers >= 10}
               className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Increase"
             >

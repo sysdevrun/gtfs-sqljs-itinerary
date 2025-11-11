@@ -225,14 +225,14 @@ export class GraphBuilder {
    * @param startStopId The starting stop ID (will be converted to parent)
    * @param endStopId The ending stop ID (will be converted to parent)
    * @param maxPaths Maximum number of paths to return (default: 100)
-   * @param maxTransfers Maximum number of transfers allowed (default: 5)
+   * @param maxTransfers Maximum number of transfers allowed (default: 3)
    * @returns Array of paths, where each path is an array of PathSegments
    */
   public findAllPaths(
     startStopId: string,
     endStopId: string,
     maxPaths: number = 100,
-    maxTransfers: number = 5
+    maxTransfers: number = 3
   ): PathSegment[][] {
     const startParent = this.findGrandestParent(startStopId);
     const endParent = this.findGrandestParent(endStopId);
