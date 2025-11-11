@@ -23,6 +23,7 @@ export interface ItineraryRequest {
   departureTime: number;
   minTransferDuration?: number;
   maxPaths?: number;
+  journeysCount?: number;
 }
 
 class GTFSWorker {
@@ -104,17 +105,16 @@ class GTFSWorker {
     // Find scheduled trips for each path
     const journeys: ScheduledJourney[] = [];
     for (const path of paths) {
-      const journey = GraphBuilder.findScheduledTrips(
+      const pathJourneys = GraphBuilder.findScheduledTrips(
         this.gtfs,
         path,
         request.date,
         request.departureTime,
-        request.minTransferDuration || 300
+        request.minTransferDuration || 300,
+        request.journeysCount || 3 // Default to 3 journeys per path
       );
 
-      if (journey) {
-        journeys.push(journey);
-      }
+      journeys.push(...pathJourneys);
     }
 
     // Sort by departure time

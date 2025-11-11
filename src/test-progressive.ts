@@ -163,17 +163,18 @@ async function main() {
     let foundCount = 0;
     for (let i = 0; i < pathsToShow; i++) {
       const scheduleStartTime = Date.now();
-      const journey = GraphBuilder.findScheduledTrips(
+      const journeys = GraphBuilder.findScheduledTrips(
         gtfs,
         paths[i],
         testDate,
         testTimeSeconds,
-        minTransferDuration
+        minTransferDuration,
+        1 // Find 1 journey per path
       );
       const scheduleTime = Date.now() - scheduleStartTime;
 
-      if (journey) {
-        displayJourney(gtfs, journey, i + 1);
+      if (journeys.length > 0) {
+        displayJourney(gtfs, journeys[0], i + 1);
         console.log(`    (found in ${scheduleTime}ms)\n`);
         foundCount++;
       } else {

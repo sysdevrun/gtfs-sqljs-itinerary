@@ -234,16 +234,17 @@ async function main() {
       console.log(`Searching for scheduled trips departing after ${testTime}...\n`);
 
       paths1.forEach((path, index) => {
-        const journey = GraphBuilder.findScheduledTrips(
+        const journeys = GraphBuilder.findScheduledTrips(
           gtfs,
           path,
           testDate,
           testTimeSeconds,
-          minTransferDuration
+          minTransferDuration,
+          1 // Find 1 journey per path
         );
 
-        if (journey) {
-          displayScheduledJourney(gtfs, journey, index + 1);
+        if (journeys.length > 0) {
+          displayScheduledJourney(gtfs, journeys[0], index + 1);
         } else {
           console.log(`\n  Path ${index + 1}: No scheduled trips found for this path\n`);
         }
@@ -278,16 +279,17 @@ async function main() {
       console.log(`Searching for scheduled trips departing after ${testTime}...\n`);
 
       paths2.forEach((path, index) => {
-        const journey = GraphBuilder.findScheduledTrips(
+        const journeys = GraphBuilder.findScheduledTrips(
           gtfs,
           path,
           testDate,
           testTimeSeconds,
-          minTransferDuration
+          minTransferDuration,
+          1 // Find 1 journey per path
         );
 
-        if (journey) {
-          displayScheduledJourney(gtfs, journey, index + 1);
+        if (journeys.length > 0) {
+          displayScheduledJourney(gtfs, journeys[0], index + 1);
         } else {
           console.log(`\n  Path ${index + 1}: No scheduled trips found for this path\n`);
         }
