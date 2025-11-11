@@ -112,8 +112,8 @@ class GTFSWorker {
     const paths = this.graphBuilder.findAllPaths(
       request.fromStopId,
       request.toStopId,
-      request.maxPaths || 10, // maxPaths (default 10)
-      request.maxTransfers || 3 // maxTransfers (default 3)
+      request.maxPaths ?? 10, // maxPaths (default 10)
+      request.maxTransfers ?? 3 // maxTransfers (default 3)
     );
 
     if (paths.length === 0) {
@@ -128,8 +128,8 @@ class GTFSWorker {
         path,
         request.date,
         request.departureTime,
-        request.minTransferDuration || 300,
-        request.journeysCount || 3 // Default to 3 journeys per path
+        request.minTransferDuration ?? 300,
+        request.journeysCount ?? 3 // Default to 3 journeys per path
       );
 
       journeys.push(...pathJourneys);
