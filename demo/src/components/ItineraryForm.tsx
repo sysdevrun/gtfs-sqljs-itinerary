@@ -77,6 +77,21 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
     setTimeHour(`${String(newHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
   };
 
+  // Handle max paths increment/decrement with dynamic step size
+  const adjustMaxPaths = (direction: 1 | -1) => {
+    let step: number;
+    if (maxPaths < 20) {
+      step = 1;
+    } else if (maxPaths < 100) {
+      step = 5;
+    } else {
+      step = 10;
+    }
+
+    const newValue = maxPaths + (step * direction);
+    setMaxPaths(Math.max(1, Math.min(500, newValue)));
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Plan Your Journey</h2>
@@ -170,10 +185,10 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
           <div className="flex gap-2 items-center">
             <button
               type="button"
-              onClick={() => setMaxPaths(Math.max(1, maxPaths - 10))}
+              onClick={() => adjustMaxPaths(-1)}
               disabled={isSearching || maxPaths <= 1}
               className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Decrease by 10"
+              title="Decrease"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -190,10 +205,10 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
             />
             <button
               type="button"
-              onClick={() => setMaxPaths(Math.min(500, maxPaths + 10))}
+              onClick={() => adjustMaxPaths(1)}
               disabled={isSearching || maxPaths >= 500}
               className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Increase by 10"
+              title="Increase"
             >
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
