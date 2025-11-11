@@ -23,6 +23,7 @@ export interface ItineraryRequest {
   departureTime: number;
   minTransferDuration?: number;
   maxPaths?: number;
+  maxTransfers?: number;
   journeysCount?: number;
 }
 
@@ -112,7 +113,7 @@ class GTFSWorker {
       request.fromStopId,
       request.toStopId,
       request.maxPaths || 10, // maxPaths (default 10)
-      3   // maxTransfers
+      request.maxTransfers || 3 // maxTransfers (default 3)
     );
 
     if (paths.length === 0) {

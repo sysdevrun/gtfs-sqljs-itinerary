@@ -133,7 +133,7 @@ Finds paths between two stops using BFS algorithm.
 - `startStopId` - Starting stop ID (will be converted to parent stop)
 - `endStopId` - Ending stop ID (will be converted to parent stop)
 - `maxPaths` - Maximum number of paths to return (default: 100)
-- `maxTransfers` - Maximum number of transfers allowed (default: 5)
+- `maxTransfers` - Maximum number of transfers allowed (default: 3)
 
 **Returns:** Array of paths, where each path is an array of PathSegments
 

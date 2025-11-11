@@ -50,6 +50,7 @@ function App() {
     date: string;
     departureTime: number;
     maxPaths: number;
+    maxTransfers: number;
     journeysCount: number;
   }) => {
     if (!worker) return;
