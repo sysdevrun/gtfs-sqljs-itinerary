@@ -191,7 +191,7 @@ function App() {
         </div>
       </div>
 
-      <footer className="bg-gray-800 text-white py-8 md:py-6 min-h-[300px] md:min-h-[150px]">
+      <footer className="bg-gray-800 text-white py-8 md:py-6 min-h-[450px] md:min-h-[150px]">
         <div className="container mx-auto px-4 max-w-5xl h-full flex flex-col justify-center">
           <div className="text-center space-y-4 md:space-y-2">
             <p className="text-lg md:text-base font-semibold">
