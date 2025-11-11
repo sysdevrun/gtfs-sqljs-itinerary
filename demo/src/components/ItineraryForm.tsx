@@ -167,42 +167,78 @@ export function ItineraryForm({ stops, onSearch, isSearching }: ItineraryFormPro
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Max Itineraries
           </label>
-          <select
-            value={maxPaths}
-            onChange={(e) => setMaxPaths(Number(e.target.value))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSearching}
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={30}>30</option>
-            <option value={50}>50</option>
-            <option value={75}>75</option>
-            <option value={100}>100</option>
-            <option value={150}>150</option>
-            <option value={200}>200</option>
-            <option value={250}>250</option>
-            <option value={300}>300</option>
-          </select>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => setMaxPaths(Math.max(1, maxPaths - 10))}
+              disabled={isSearching || maxPaths <= 1}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Decrease by 10"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <input
+              type="number"
+              value={maxPaths}
+              onChange={(e) => setMaxPaths(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-center"
+              disabled={isSearching}
+              min="1"
+              max="500"
+            />
+            <button
+              type="button"
+              onClick={() => setMaxPaths(Math.min(500, maxPaths + 10))}
+              disabled={isSearching || maxPaths >= 500}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Increase by 10"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Journeys per Path
           </label>
-          <select
-            value={journeysCount}
-            onChange={(e) => setJourneysCount(Number(e.target.value))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSearching}
-          >
-            <option value={1}>1</option>
-            <option value={2}>2</option>
-            <option value={3}>3</option>
-            <option value={4}>4</option>
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-          </select>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => setJourneysCount(Math.max(1, journeysCount - 1))}
+              disabled={isSearching || journeysCount <= 1}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Decrease"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <input
+              type="number"
+              value={journeysCount}
+              onChange={(e) => setJourneysCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-center"
+              disabled={isSearching}
+              min="1"
+              max="20"
+            />
+            <button
+              type="button"
+              onClick={() => setJourneysCount(Math.min(20, journeysCount + 1))}
+              disabled={isSearching || journeysCount >= 20}
+              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Increase"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
