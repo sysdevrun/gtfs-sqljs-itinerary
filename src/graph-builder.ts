@@ -274,7 +274,7 @@ export class GraphBuilder {
       // Check if we've exceeded max transfers
       // Convert path to legs to count transfers
       const legs = GraphBuilder.pathToTripLegs(path);
-      if (legs.length >= maxTransfers + 1) {
+      if (legs.length > maxTransfers + 1) {
         // Already at max transfers, don't explore further
         continue;
       }
