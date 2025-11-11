@@ -26,6 +26,20 @@ export interface ItineraryRequest {
   journeysCount?: number;
 }
 
+/**
+ * Convert https URL to proxy URL for CORS bypass
+ * Only processes URLs starting with https://, leaves relative paths unchanged
+ */
+function getProxyUrl(url: string): string {
+  if (!url.startsWith('https://')) {
+    // Return as-is for relative paths or non-https URLs
+    return url;
+  }
+  // Remove https:// prefix and prepend proxy URL
+  const withoutProtocol = url.substring(8);
+  return `https://gtfs-proxy.sys-dev-run.re/proxy/${withoutProtocol}`;
+}
+
 class GTFSWorker {
   private gtfs: GtfsSqlJs | null = null;
   private graphBuilder: GraphBuilder | null = null;
@@ -41,8 +55,11 @@ class GTFSWorker {
       onProgress(0.1);
     }
 
+    // Use proxy for https URLs, leave relative paths unchanged
+    const sourceUrl = getProxyUrl(gtfsUrl);
+
     // Load GTFS from ZIP URL with locateFile configuration for sql.js WASM
-    this.gtfs = await GtfsSqlJs.fromZip(gtfsUrl, {
+    this.gtfs = await GtfsSqlJs.fromZip(sourceUrl, {
       locateFile: (filename: string) => {
         // Return path to WASM file in public directory
         // In development: /sql-wasm.wasm
