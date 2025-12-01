@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "test": "node dist/test.js",
     "test:progressive": "node dist/test-progressive.js"
   },
